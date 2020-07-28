@@ -37,8 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'werkzeug_debugger_runserver',
-    'django_extensions',
     'user',
 ]
 SESSION_COOKIE_AGE = 3600
