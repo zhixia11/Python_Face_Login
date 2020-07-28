@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title> 录入人脸 - 湖北大学Python课程实践系统</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="all,follow">
+    <!-- Bootstrap CSS-->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/style.default.css" id="theme-stylesheet">
+</head>
+<body style="">
+<div class="page login-page">
+    <div class="container d-flex align-items-center">
+        <div class="form-holder has-shadow">
+            <div class="row">
+                <!-- Logo & Information Panel-->
+                <div class="col-lg-6">
+                    <div class="info d-flex align-items-center">
+                        <div class="content">
+                            <div class="logo">
+                                <h1>录入人脸</h1>
+                            </div>
+                            <p>湖北大学Python课程实践系统</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 bg-white">
+                    <div class="form d-flex align-items-center">
+                        <div class="content">
+                            <div style="display: none;" id="videos-container" style="width:460px; height: 345px"></div>
+                            <div id="form-context">
+                                <div class="alert alert-warning">注意，若已存在人脸数据，本次录入将会覆盖历史人脸数据！</div>
+                                <div class="alert alert-info">首先，让我们检验一下是否本人登录</div>
+                                <div class="form-group">
+                                    <input id="check-password" class="input-material" type="password"
+                                           placeholder="请输入密码">
+                                    <div class="invalid-feedback">
+                                        密码必须在6~10位之间
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button id="verify-btn" type="button" name="registerSubmit" class="btn btn-primary">
+                                        开始检验
+                                    </button>
+                                </div>
+                                <small>恭喜你，发现了精彩世界:)</small>
+                                <a href="javascript:history.back(-1)" class="signup">&nbsp;返回上一页</a>
+                            </div>
+
+                            <div id="face-ctrl" style="display: none">
+                                <br>
+                                <button id="start-record" type="button" class="btn btn-primary">开始录制</button>
+                                <a href="javascript:history.back(-1)" class="signup">&nbsp;取消录入</a>
+                            </div>
+                            <br>
+                            <div id="photo-info" class="alert alert-info" style="display: none"></div>
+                            <!--描绘video截图-->
+                            <canvas id="canvas" width="460" height="345" style="display: none;"></canvas>
+                            <form id="video-form" style="display: none">
+                                <input type="file" id="video-input">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- JavaScript files-->
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="https://www.layuicdn.com/layer/layer.js"></script>
+<script>
+    let isOpen = false;
+    let face_imgs = [];//存储图片
+    let face_str = "";
+    let intervalID;
+
+    let mediaStream;
+    let recorderFile;
+    let stopRecordCallback;
+    let mediaRecorder;
+    let videosContainer = document.getElementById('videos-container');
+
+    function openCamera() {
+        let len = videosContainer.childNodes.length;
+        for (let i = 0; i < len; i++) {
+            videosContainer.removeChild(videosContainer.childNodes[i]);
+        }
+
+        let video = document.createElement('video');
+
+        let videoWidth = 460;
+        let videoHeight = 345;
+
+        video.controls = false;
+        video.muted = true;
+        video.width = videoWidth;
+        video.height = videoHeight;
+        MediaUtils.getUserMedia(true, false, function (err, stream) {
+            if (err) {
+                throw err;
+            } else {
+                // 通过 MediaRecorder 记录获取到的媒体流
+                console.log();
+                mediaRecorder = new MediaRecorder(stream);
+                mediaStream = stream;
+                let chunks = [], startTime = 0;
+                video.srcObject = stream;
+                video.play();
+
+                videosContainer.appendChild(video);
+                mediaRecorder.ondataavailable = function (e) {
+                    mediaRecorder.blobs.push(e.data);
+                    chunks.push(e.data);
+                };
+                mediaRecorder.blobs = [];
+
+                mediaRecorder.onstop = function (e) {
+                    recorderFile = new Blob(chunks, {'type': mediaRecorder.mimeType});
+                    chunks = [];
+                    if (null != stopRecordCallback) {
+                        stopRecordCallback();
+                    }
+                };
+            }
+        });
+    }
+
+    // 停止录制
+    function stopRecord(callback) {
+        stopRecordCallback = callback;
+        // 终止录制器
+        mediaRecorder.stop();
+        // 关闭媒体流
+        MediaUtils.closeStream(mediaStream);
+    }
+
+    let MediaUtils = {
+        getUserMedia: function (videoEnable, audioEnable, callback) {
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+                || navigator.msGetUserMedia || window.getUserMedia;
+            let constraints = {video: videoEnable, audio: audioEnable};
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+                    callback(false, stream);
+                })['catch'](function (err) {
+                    callback(err);
+                });
+            } else if (navigator.getUserMedia) {
+                navigator.getUserMedia(constraints, function (stream) {
+                    callback(false, stream);
+                }, function (err) {
+                    callback(err);
+                });
+            } else {
+                callback(new Error('Not support userMedia'));
+            }
+        },
+
+        closeStream: function (stream) {
+            if (typeof stream.stop === 'function') {
+                stream.stop();
+            } else {
+                let trackList = [stream.getAudioTracks(), stream.getVideoTracks()];
+
+                for (let i = 0; i < trackList.length; i++) {
+                    let tracks = trackList[i];
+                    if (tracks && tracks.length > 0) {
+                        for (let j = 0; j < tracks.length; j++) {
+                            let track = tracks[j];
+                            if (typeof track.stop === 'function') {
+                                track.stop();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    function startRecord() {
+        mediaRecorder.start();
+        setTimeout(function () {
+            // 结束
+            stopRecord(function () {
+                sync_send();
+            });
+        }, 3000);
+    }
+
+    function verify_ok() {
+        $('#face-ctrl').css("display", "block");
+        $('#video').css("display", "block");
+        $('#form-context').css("display", "none");
+        $('#videos-container').css("display", "block");
+        layer.msg("请手动确定人脸正对取景框，然后手动点击开始录制");
+        openCamera();
+    }
+
+    function sync_send() {
+        let video_file = new File([recorderFile], 'msr-' + (new Date).toISOString().replace(/:|\./g, '-') + '.mp4', {
+            type: 'video/mp4'
+        });
+        let data = new FormData();
+        data.append("user_video", video_file);
+        layer.msg("录制完毕，正在发送至后端...");
+        $.ajax({
+            type: "POST",
+            url: "/user/face/",
+            processData: false,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+            },
+            dataType: 'json',
+            contentType:false,
+            data:data,
+            success: function (result) {
+                console.log(result);
+                if (result.code==1){
+                    layer.msg("人脸录入成功！");
+                    setTimeout(function () {
+                       window.location="/user/home/";
+                    },1500)
+                }else if(result.code==-1){
+                    layer.msg(result.msg);
+                    setTimeout(function () {
+                       location.reload();
+                    },1500)
+                }else {
+                    layer.msg(result.msg);
+                }
+            },
+            error: function (e) {
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        });
+    }
+
+
+    $(function () {
+        if ({{ code }}==1)
+        {
+            verify_ok();
+        }
+        $("#start-record").click(function () {
+            layer.msg("已开始录制...");
+            startRecord();
+        });
+
+        $("#verify-btn").click(function () {
+            $.ajax({
+                type: "POST",
+                url: "/user/verify/",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+                },
+                dataType: 'json',
+                data: {
+                    "password": $('#check-password').val()
+                },
+                success: function (result) {
+                    console.log(result)
+                    if (result.code === 1) {
+                        layer.confirm('验证成功，该验证令牌本次登录有效！是否现在就开始录入人脸数据？', {
+                            btn: ['开始录入', '返回上一页']
+                        }, function (index) {
+                            verify_ok();
+                            layer.close(index);
+                        }, function (index) {
+                            window.history.back();
+                        });
+                    } else {
+                        layer.msg(result.msg);
+                    }
+                },
+                error: function (e) {
+                    console.log(e.status);
+                    console.log(e.responseText);
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

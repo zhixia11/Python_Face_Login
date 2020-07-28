@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Register - 注册 - 湖北大学Python课程实践系统</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="all,follow">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/css.css">
+    <link rel="stylesheet" href="/static/css/style.default.css" id="theme-stylesheet">
+</head>
+<body style="">
+<div class="page login-page">
+    <div class="container d-flex align-items-center">
+        <div class="form-holder has-shadow">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="info d-flex align-items-center">
+                        <div class="content">
+                            <div class="logo">
+                                <h1>欢迎注册</h1>
+                            </div>
+                            <a style="color: white;text-decoration: none" href="/"><p>湖北大学Python课程实践系统</p></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 bg-white">
+                    <div class="form d-flex align-items-center">
+                        <div class="content">
+                            <video id="video" width="460" autoplay="autoplay"
+                                   style="display: none;"></video>
+                            <div id="form-context">
+                                <div class="form-group">
+                                    <input id="register-username" class="input-material" type="text"
+                                           name="registerUsername"
+                                           placeholder="请输入用户名">
+                                    <div class="invalid-feedback">
+                                        用户名必须在2~18位之间
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input id="register-nickname" class="input-material" type="text" name="registerNickname"
+                                           placeholder="请输入昵称">
+                                    <div class="invalid-feedback">
+                                        昵称必须在1~10位之间
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input id="register-password" class="input-material" type="password"
+                                           name="registerPassword" placeholder="请输入密码">
+                                    <div class="invalid-feedback">
+                                        密码必须在6~10位之间
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input id="register-passwords" class="input-material" type="password"
+                                           name="registerPasswords" placeholder="确认密码">
+                                    <div class="invalid-feedback">
+                                        两次密码必须相同 且在6~10位之间
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button id="sync-sub-btn" type="button" name="registerSubmit"
+                                            class="btn btn-primary">
+                                        确认注册
+                                    </button>
+                                </div>
+                                <small>已有账号?</small>
+                                <a href="/user/login/" class="signup">&nbsp;点我登录</a>
+                            </div>
+                            <div id="register-info" class="alert alert-info" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- JavaScript files-->
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script>
+    let register_info = $('#register-info');
+    $(function () {
+        let flagName = false;
+        let flagPas = false;
+        let flagPass = false;
+        let flagNick = false;
+        let name, passWord, passWords;
+        $("#register-username").change(function () {
+            name = $("#register-username").val();
+            if (name.length < 2 || name.length > 18) {
+                $("#register-username").removeClass("form-control is-valid")
+                $("#register-username").addClass("form-control is-invalid");
+                flagName = false;
+            } else {
+                $("#register-username").removeClass("form-control is-invalid")
+                $("#register-username").addClass("form-control is-valid");
+                flagName = true;
+            }
+        })
+        $("#register-nickname").change(function () {
+            name = $("#register-nickname").val();
+            if (name.length <= 1|| name.length > 12) {
+                $("#register-nickname").removeClass("form-control is-valid")
+                $("#register-nickname").addClass("form-control is-invalid");
+                flagNick = false;
+            } else {
+                $("#register-nickname").removeClass("form-control is-invalid")
+                $("#register-nickname").addClass("form-control is-valid");
+                flagNick = true;
+            }
+        })
+        $("#register-password").change(function () {
+            passWord = $("#register-password").val();
+            if (passWord.length < 6 || passWord.length > 18) {
+                $("#register-password").removeClass("form-control is-valid")
+                $("#register-password").addClass("form-control is-invalid");
+                flagPas = false;
+            } else {
+                $("#register-password").removeClass("form-control is-invalid")
+                $("#register-password").addClass("form-control is-valid");
+                flagPas = true;
+            }
+        })
+        $("#register-passwords").change(function () {
+            passWords = $("#register-passwords").val();
+            if ((passWord != passWords) || (passWords.length < 6 || passWords.length > 18)) {
+                $("#register-passwords").removeClass("form-control is-valid")
+                $("#register-passwords").addClass("form-control is-invalid");
+                flagPass = false;
+            } else {
+                $("#register-passwords").removeClass("form-control is-invalid")
+                $("#register-passwords").addClass("form-control is-valid");
+                flagPass = true;
+            }
+        })
+
+
+        $("#sync-sub-btn").click(function () {
+            if (flagName && flagPas && flagPass && flagNick) {
+                console.log("确认注册中，正在发起请求...");
+                register_info.css("display", "block");
+                register_info.text("确认注册中，正在发起请求...")
+                sync_sub();
+            } else {
+                if (!flagName) {
+                    $("#register-username").addClass("form-control is-invalid");
+                }
+                if (!flagPas) {
+                    $("#register-password").addClass("form-control is-invalid");
+                }
+                if (!flagPass) {
+                    $("#register-passwords").addClass("form-control is-invalid");
+                }
+                if (!flagNick){
+                    $("#register-nickname").addClass("form-control is-invalid");
+                }
+            }
+        });
+    });
+
+    function sync_sub() {
+        let username = $('#register-username').val();
+        let password = $('#register-password').val();
+        let nickname = $('#register-nickname').val();
+        let req_data = {
+            "username": username,
+            "password": password,
+            "nickname": nickname,
+        }
+        $.ajax({
+            type: "POST",
+            url: "/user/register/",
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+            },
+            dataType: 'json',
+            data: req_data,
+            success: function (result) {
+                let res = result;
+                register_info.css("display", "block");
+                console.log(res);
+                if (res.code === 1) {
+                    console.log("成功返回了！");
+                    register_info.text("注册成功，正在跳转至登录页面...");
+                    setTimeout(function () {
+                        window.location = "/user/login";
+                    },2000);
+                }else {
+                    register_info.text(res.msg);
+                }
+            },
+            error: function (e) {
+                console.log(e.status);
+                console.log(e.responseText);
+            }
+        })
+    }
+
+</script>
+
+</body>
+</html>
