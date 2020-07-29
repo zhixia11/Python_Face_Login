@@ -10,6 +10,14 @@
 
 #### 截图
 
+<img src="https://i.loli.net/2020/07/29/WBf2wyjtzcxOZRs.png" alt="主页" style="zoom: 33%;" />
+
+<img src="https://i.loli.net/2020/07/29/l8Qc2kxCuDJSdpr.png" alt="人脸登录" style="zoom:33%;" />
+
+<img src="https://i.loli.net/2020/07/29/r2NRHjgxq6YCGBc.png" alt="人脸录入前的验证" style="zoom:33%;" />
+
+<img src="https://i.loli.net/2020/07/29/MsCQ4OSnuYmkp2z.png" alt="录入人脸" style="zoom:33%;" />
+
 
 
 ### 组件
@@ -29,7 +37,7 @@
 
 ### 运行
 
-运行前首先需要配置settings，进入FaceLogin文件夹，编辑settings.py文件，在87行左右找到DATABASES属性，修改为你的数据库配置
+运行前首先需要配置settings，进入FaceLogin文件夹，编辑settings.py文件，在87行左右找到DATABASES属性，修改为你的数据库配置，也可以启用默认的sqlite3数据库
 
 然后打开控制台进入项目主目录，进行数据库迁移
 
@@ -98,8 +106,17 @@ server {
 
 个人使用的是第二种方法，配置NGINX做反代后，然后使用内网穿透将端口转发至公网。本人在使用该方法时，Windows端访问时会出现隐私权限错误，这是自签证书导致的，可忽略提示，继续访问即可正常使用。此时浏览器地址栏左侧依旧会出现不安全提示，但能够正常开启并使用摄像头。Mac端访问，Chrome会直接拦截，无法正常访问，Safari会加载显示不完整。Linux端暂未测试。建议统一使用Chrome浏览器访问。暂未测试上述Mac无法访问的情况是否是个例，请自行研究测试。
 
+### 架构
+
+1. 前后端分离（两个页面偷懒使用了两个模板语言变量，分别是主页的登录与否的超链接变化和录入人脸页面的密码检验是否通过的布局变化）
+2. 视频/图像的获取在前端，使用h5的获取设备输入流实现，获取后通过ajax提交至后端
+3. 登录采用每2s捕获一次照片，然后jpg模式编码转成base64格式字符串，提交至后端，后端再转成jpg格式存储，并进行识别，直到识别成功，就停止录制，然后跳转
+4. 人脸录入需要先验证一遍密码保证本人，然后用户手动点击按钮开始录制视频，3s后录制结束，编码为mp4格式，new一个FormData 传递给后端，后端提取出10张含有人脸的照片，并进行学习，如果照片数量不足返回重新录制
+5. 受技术限制，暂未实现增量学习，任何一个用户录入人脸提交后，后端都会重新对所有的人脸进行学习（也是个人觉得无实际应用的原因）。
+
 ### 其他
 
 > 有疑问 或 代码有错误，请提交 issue。
 
 [ Apache-2.0 License](https://github.com/oxywen/Python_Face_Login/blob/master/LICENSE)
+
